@@ -78,6 +78,7 @@ weston_SOURCES =					\
 	src/compositor-rdp.h				\
 	src/compositor-wayland.h			\
 	src/compositor-x11.h				\
+	src/compositor-ogon.h			\
 	src/input.c					\
 	src/data-device.c				\
 	src/screenshooter.c				\
@@ -220,6 +221,7 @@ westoninclude_HEADERS =				\
 	src/compositor-rdp.h			\
 	src/compositor-wayland.h		\
 	src/compositor-x11.h			\
+	src/compositor-ogon.h			\
 	src/timeline-object.h			\
 	shared/matrix.h				\
 	shared/config-parser.h			\
@@ -408,6 +410,22 @@ rdp_backend_la_CFLAGS =				\
 rdp_backend_la_SOURCES = 			\
 	src/compositor-rdp.c			\
 	src/compositor-rdp.h			\
+	shared/helpers.h
+endif
+
+if ENABLE_OGON_COMPOSITOR
+module_LTLIBRARIES += ogon-backend.la
+ogon_backend_la_LDFLAGS = -module -avoid-version
+ogon_backend_la_LIBADD = $(COMPOSITOR_LIBS) \
+	$(OGON_COMPOSITOR_LIBS) \
+	libshared.la
+ogon_backend_la_CFLAGS =				\
+	$(COMPOSITOR_CFLAGS)			\
+	$(OGON_COMPOSITOR_CFLAGS)		\
+	$(AM_CFLAGS)
+ogon_backend_la_SOURCES = 			\
+	src/compositor-ogon.c			\
+	src/compositor-ogon.h			\
 	shared/helpers.h
 endif
 

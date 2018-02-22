@@ -251,6 +251,16 @@ if test x$enable_rdp_compositor = xyes; then
   CPPFLAGS="$SAVED_CPPFLAGS"
 fi
 
+AC_ARG_ENABLE([ogon-compositor], [  --enable-ogon-compositor],,
+              enable_ogon_compositor=no)
+AM_CONDITIONAL([ENABLE_OGON_COMPOSITOR],
+               [test x$enable_ogon_compositor = xyes])
+if test x$enable_ogon_compositor = xyes; then
+  AC_DEFINE([BUILD_OGON_COMPOSITOR], [1], [Build the ogon compositor])
+  PKG_CHECK_MODULES(OGON_COMPOSITOR, [ogon-backend0 freerdp2 >= 2.0 freerdp-server2 >= 2.0])
+fi
+
+
 AC_ARG_ENABLE([screen-sharing], [  --enable-screen-sharing],,
               enable_screen_sharing=no)
 AM_CONDITIONAL([ENABLE_SCREEN_SHARING],
@@ -681,6 +691,7 @@ AC_MSG_RESULT([
 	RPI Compositor			${enable_rpi_compositor}
 	FBDEV Compositor		${enable_fbdev_compositor}
 	RDP Compositor			${enable_rdp_compositor}
+	ogon Compositor 		${enable_ogon_compositor}
 	Screen Sharing			${enable_screen_sharing}
 	JUnit XML output		${enable_junit_xml}
 
