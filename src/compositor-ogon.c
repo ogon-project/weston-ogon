@@ -861,7 +861,7 @@ ogon_update_keyboard_modifiers(struct ogon_backend *b, struct weston_seat *seat,
 	scrollMask = (1 << xkb_info->scroll_led); // TODO: don't rely on the led status
 
 	mods_locked = capsLock ? (mods_locked | capsMask) : (mods_locked & ~capsMask);
-	mods_locked = numLock ? (mods_locked | numMask) : (mods_locked & ~numLock);
+	mods_locked = numLock ? (mods_locked | numMask) : (mods_locked & ~numMask);
 	mods_locked = scrollLock ? (mods_locked | scrollMask) : (mods_locked & ~scrollMask);
 
 	xkb_state_update_mask(state, mods_depressed, mods_latched, mods_locked, 0, 0, group);
