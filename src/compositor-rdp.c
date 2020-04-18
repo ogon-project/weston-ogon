@@ -83,6 +83,31 @@
 #define DEFAULT_AXIS_STEP_DISTANCE 10
 #define RDP_MODE_FREQ 60 * 1000
 
+/* The RDP API is truly wonderful: the pixel format definition changed
+ * from BGRA32 to B8G8R8A8, but some versions ship with a definition of
+ * PIXEL_FORMAT_BGRA32 which doesn't actually build. Try really, really,
+ * hard to find one which does. */
+#if FREERDP_VERSION_MAJOR >= 2 && defined(PIXEL_FORMAT_BGRA32) && !defined(RDP_PIXEL_FORMAT_B8G8R8A8)
+#define DEFAULT_PIXEL_FORMAT PIXEL_FORMAT_BGRA32
+#else
+#define DEFAULT_PIXEL_FORMAT RDP_PIXEL_FORMAT_B8G8R8A8
+#endif
+
+#ifdef HAVE_SURFACE_BITS_BMP
+#define SURFACE_BPP(cmd) cmd.bmp.bpp
+#define SURFACE_CODECID(cmd) cmd.bmp.codecID
+#define SURFACE_WIDTH(cmd) cmd.bmp.width
+#define SURFACE_HEIGHT(cmd) cmd.bmp.height
+#define SURFACE_BITMAP_DATA(cmd) cmd.bmp.bitmapData
+#define SURFACE_BITMAP_DATA_LEN(cmd) cmd.bmp.bitmapDataLength
+#else
+#define SURFACE_BPP(cmd) cmd.bpp
+#define SURFACE_CODECID(cmd) cmd.codecID
+#define SURFACE_WIDTH(cmd) cmd.width
+#define SURFACE_HEIGHT(cmd) cmd.height
+#define SURFACE_BITMAP_DATA(cmd) cmd.bitmapData
+#define SURFACE_BITMAP_DATA_LEN(cmd) cmd.bitmapDataLength
+#endif
 
 struct rdp_output;
 
@@ -144,7 +169,7 @@ rdp_peer_refresh_rfx(pixman_region32_t *damage, pixman_image_t *image, freerdp_p
 	uint32_t *ptr;
 	RFX_RECT *rfxRect;
 	rdpUpdate *update = peer->update;
-	SURFACE_BITS_COMMAND *cmd = &update->surface_bits_command;
+	SURFACE_BITS_COMMAND cmd;
 	RdpPeerContext *context = (RdpPeerContext *)peer->context;
 
 	Stream_Clear(context->encode_stream);
@@ -154,18 +179,18 @@ rdp_peer_refresh_rfx(pixman_region32_t *damage, pixman_image_t *image, freerdp_p
 	height = (damage->extents.y2 - damage->extents.y1);
 
 #ifdef HAVE_SKIP_COMPRESSION
-	cmd->skipCompression = TRUE;
+	cmd.skipCompression = TRUE;
 #else
-	memset(cmd, 0, sizeof(*cmd));
+	memset(&cmd, 0, sizeof(cmd));
 #endif
-	cmd->destLeft = damage->extents.x1;
-	cmd->destTop = damage->extents.y1;
-	cmd->destRight = damage->extents.x2;
-	cmd->destBottom = damage->extents.y2;
-	cmd->bpp = 32;
-	cmd->codecID = peer->settings->RemoteFxCodecId;
-	cmd->width = width;
-	cmd->height = height;
+	cmd.destLeft = damage->extents.x1;
+	cmd.destTop = damage->extents.y1;
+	cmd.destRight = damage->extents.x2;
+	cmd.destBottom = damage->extents.y2;
+	SURFACE_BPP(cmd) = 32;
+	SURFACE_CODECID(cmd) = peer->settings->RemoteFxCodecId;
+	SURFACE_WIDTH(cmd) = width;
+	SURFACE_HEIGHT(cmd) = height;
 
 	ptr = pixman_image_get_data(image) + damage->extents.x1 +
 				damage->extents.y1 * (pixman_image_get_stride(image) / sizeof(uint32_t));
@@ -188,10 +213,10 @@ rdp_peer_refresh_rfx(pixman_region32_t *damage, pixman_image_t *image, freerdp_p
 			pixman_image_get_stride(image)
 	);
 
-	cmd->bitmapDataLength = Stream_GetPosition(context->encode_stream);
-	cmd->bitmapData = Stream_Buffer(context->encode_stream);
+	SURFACE_BITMAP_DATA_LEN(cmd) = Stream_GetPosition(context->encode_stream);
+	SURFACE_BITMAP_DATA(cmd) = Stream_Buffer(context->encode_stream);
 
-	update->SurfaceBits(update->context, cmd);
+	update->SurfaceBits(update->context, &cmd);
 }
 
 
@@ -201,7 +226,7 @@ rdp_peer_refresh_nsc(pixman_region32_t *damage, pixman_image_t *image, freerdp_p
 	int width, height;
 	uint32_t *ptr;
 	rdpUpdate *update = peer->update;
-	SURFACE_BITS_COMMAND *cmd = &update->surface_bits_command;
+	SURFACE_BITS_COMMAND cmd;
 	RdpPeerContext *context = (RdpPeerContext *)peer->context;
 
 	Stream_Clear(context->encode_stream);
@@ -211,28 +236,28 @@ rdp_peer_refresh_nsc(pixman_region32_t *damage, pixman_image_t *image, freerdp_p
 	height = (damage->extents.y2 - damage->extents.y1);
 
 #ifdef HAVE_SKIP_COMPRESSION
-	cmd->skipCompression = TRUE;
+	cmd.skipCompression = TRUE;
 #else
-	memset(cmd, 0, sizeof(*cmd));
+	memset(&cmd, 0, sizeof(cmd));
 #endif
-	cmd->destLeft = damage->extents.x1;
-	cmd->destTop = damage->extents.y1;
-	cmd->destRight = damage->extents.x2;
-	cmd->destBottom = damage->extents.y2;
-	cmd->bpp = 32;
-	cmd->codecID = peer->settings->NSCodecId;
-	cmd->width = width;
-	cmd->height = height;
+	cmd.destLeft = damage->extents.x1;
+	cmd.destTop = damage->extents.y1;
+	cmd.destRight = damage->extents.x2;
+	cmd.destBottom = damage->extents.y2;
+	SURFACE_BPP(cmd) = 32;
+	SURFACE_CODECID(cmd) = peer->settings->NSCodecId;
+	SURFACE_WIDTH(cmd) = width;
+	SURFACE_HEIGHT(cmd) = height;
 
 	ptr = pixman_image_get_data(image) + damage->extents.x1 +
 				damage->extents.y1 * (pixman_image_get_stride(image) / sizeof(uint32_t));
 
 	nsc_compose_message(context->nsc_context, context->encode_stream, (BYTE *)ptr,
-			cmd->width,	cmd->height,
+			SURFACE_WIDTH(cmd),	SURFACE_HEIGHT(cmd),
 			pixman_image_get_stride(image));
-	cmd->bitmapDataLength = Stream_GetPosition(context->encode_stream);
-	cmd->bitmapData = Stream_Buffer(context->encode_stream);
-	update->SurfaceBits(update->context, cmd);
+	SURFACE_BITMAP_DATA_LEN(cmd) = Stream_GetPosition(context->encode_stream);
+	SURFACE_BITMAP_DATA(cmd) = Stream_Buffer(context->encode_stream);
+	update->SurfaceBits(update->context, &cmd);
 }
 
 static void
@@ -253,8 +278,8 @@ static void
 rdp_peer_refresh_raw(pixman_region32_t *region, pixman_image_t *image, freerdp_peer *peer)
 {
 	rdpUpdate *update = peer->update;
-	SURFACE_BITS_COMMAND *cmd = &update->surface_bits_command;
-	SURFACE_FRAME_MARKER *marker = &update->surface_frame_marker;
+	SURFACE_BITS_COMMAND cmd;
+	SURFACE_FRAME_MARKER marker;
 	pixman_box32_t *rect, subrect;
 	int nrects, i;
 	int heightIncrement, remainingHeight, top;
@@ -263,21 +288,21 @@ rdp_peer_refresh_raw(pixman_region32_t *region, pixman_image_t *image, freerdp_p
 	if (!nrects)
 		return;
 
-	marker->frameId++;
-	marker->frameAction = SURFACECMD_FRAMEACTION_BEGIN;
-	update->SurfaceFrameMarker(peer->context, marker);
+	marker.frameId++;
+	marker.frameAction = SURFACECMD_FRAMEACTION_BEGIN;
+	update->SurfaceFrameMarker(peer->context, &marker);
 
-	memset(cmd, 0, sizeof(*cmd));
-	cmd->bpp = 32;
-	cmd->codecID = 0;
+	memset(&cmd, 0, sizeof(cmd));
+	SURFACE_BPP(cmd) = 32;
+	SURFACE_CODECID(cmd) = 0;
 
 	for (i = 0; i < nrects; i++, rect++) {
 		/*weston_log("rect(%d,%d, %d,%d)\n", rect->x1, rect->y1, rect->x2, rect->y2);*/
-		cmd->destLeft = rect->x1;
-		cmd->destRight = rect->x2;
-		cmd->width = rect->x2 - rect->x1;
+		cmd.destLeft = rect->x1;
+		cmd.destRight = rect->x2;
+		SURFACE_WIDTH(cmd) = rect->x2 - rect->x1;
 
-		heightIncrement = peer->settings->MultifragMaxRequestSize / (16 + cmd->width * 4);
+		heightIncrement = peer->settings->MultifragMaxRequestSize / (16 + SURFACE_WIDTH(cmd) * 4);
 		remainingHeight = rect->y2 - rect->y1;
 		top = rect->y1;
 
@@ -285,26 +310,26 @@ rdp_peer_refresh_raw(pixman_region32_t *region, pixman_image_t *image, freerdp_p
 		subrect.x2 = rect->x2;
 
 		while (remainingHeight) {
-			   cmd->height = (remainingHeight > heightIncrement) ? heightIncrement : remainingHeight;
-			   cmd->destTop = top;
-			   cmd->destBottom = top + cmd->height;
-			   cmd->bitmapDataLength = cmd->width * cmd->height * 4;
-			   cmd->bitmapData = (BYTE *)realloc(cmd->bitmapData, cmd->bitmapDataLength);
+			   SURFACE_HEIGHT(cmd) = (remainingHeight > heightIncrement) ? heightIncrement : remainingHeight;
+			   cmd.destTop = top;
+			   cmd.destBottom = top + SURFACE_HEIGHT(cmd);
+			   SURFACE_BITMAP_DATA_LEN(cmd) = SURFACE_WIDTH(cmd) * SURFACE_HEIGHT(cmd) * 4;
+			   SURFACE_BITMAP_DATA(cmd) = (BYTE *)realloc(SURFACE_BITMAP_DATA(cmd), SURFACE_BITMAP_DATA_LEN(cmd));
 
 			   subrect.y1 = top;
-			   subrect.y2 = top + cmd->height;
-			   pixman_image_flipped_subrect(&subrect, image, cmd->bitmapData);
+			   subrect.y2 = top + SURFACE_HEIGHT(cmd);
+			   pixman_image_flipped_subrect(&subrect, image, SURFACE_BITMAP_DATA(cmd));
 
 			   /*weston_log("*  sending (%d,%d, %d,%d)\n", subrect.x1, subrect.y1, subrect.x2, subrect.y2); */
-			   update->SurfaceBits(peer->context, cmd);
+			   update->SurfaceBits(peer->context, &cmd);
 
-			   remainingHeight -= cmd->height;
-			   top += cmd->height;
+			   remainingHeight -= SURFACE_HEIGHT(cmd);
+			   top += SURFACE_HEIGHT(cmd);
 		}
 	}
 
-	marker->frameAction = SURFACECMD_FRAMEACTION_END;
-	update->SurfaceFrameMarker(peer->context, marker);
+	marker.frameAction = SURFACECMD_FRAMEACTION_END;
+	update->SurfaceFrameMarker(peer->context, &marker);
 }
 
 static void
@@ -605,13 +630,13 @@ rdp_peer_context_new(freerdp_peer* client, RdpPeerContext* context)
 	context->rfx_context->mode = RLGR3;
 	context->rfx_context->width = client->settings->DesktopWidth;
 	context->rfx_context->height = client->settings->DesktopHeight;
-	rfx_context_set_pixel_format(context->rfx_context, RDP_PIXEL_FORMAT_B8G8R8A8);
+	rfx_context_set_pixel_format(context->rfx_context, DEFAULT_PIXEL_FORMAT);
 
 	context->nsc_context = nsc_context_new();
 	if (!context->nsc_context)
 		goto out_error_nsc;
 
-	nsc_context_set_pixel_format(context->nsc_context, RDP_PIXEL_FORMAT_B8G8R8A8);
+	nsc_context_set_parameters(context->nsc_context, NSC_COLOR_FORMAT, DEFAULT_PIXEL_FORMAT);
 
 	context->encode_stream = Stream_New(NULL, 65536);
 	if (!context->encode_stream)
@@ -826,7 +851,7 @@ xf_peer_activate(freerdp_peer* client)
 	pixman_box32_t box;
 	pixman_region32_t damage;
 	char seat_name[50];
-
+	POINTER_SYSTEM_UPDATE pointer_system;
 
 	peerCtx = (RdpPeerContext *)client->context;
 	b = peerCtx->rdpBackend;
@@ -919,8 +944,8 @@ xf_peer_activate(freerdp_peer* client)
 
 	/* disable pointer on the client side */
 	pointer = client->update->pointer;
-	pointer->pointer_system.type = SYSPTR_NULL;
-	pointer->PointerSystem(client->context, &pointer->pointer_system);
+	pointer_system.type = SYSPTR_NULL;
+	pointer->PointerSystem(client->context, &pointer_system);
 
 	/* sends a full refresh */
 	box.x1 = 0;

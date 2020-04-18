@@ -248,6 +248,8 @@ if test x$enable_rdp_compositor = xyes; then
   SAVED_CPPFLAGS="$CPPFLAGS"
   CPPFLAGS="$CPPFLAGS $RDP_COMPOSITOR_CFLAGS"
   AC_CHECK_HEADERS([freerdp/version.h])
+  AC_CHECK_MEMBER([SURFACE_BITS_COMMAND.bmp],[have_bmp=1],[have_bmp=0],[[#include <freerdp/update.h>]])
+  AC_DEFINE([HAVE_SURFACE_BITS_BMP], $have_bmp, [SURFACE_BITS_CMD has bmp field])
   CPPFLAGS="$SAVED_CPPFLAGS"
 fi
 
