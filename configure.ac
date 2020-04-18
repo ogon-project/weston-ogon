@@ -257,7 +257,7 @@ AM_CONDITIONAL([ENABLE_OGON_COMPOSITOR],
                [test x$enable_ogon_compositor = xyes])
 if test x$enable_ogon_compositor = xyes; then
   AC_DEFINE([BUILD_OGON_COMPOSITOR], [1], [Build the ogon compositor])
-  PKG_CHECK_MODULES(OGON_COMPOSITOR, [ogon-backend0 freerdp2 >= 2.0 freerdp-server2 >= 2.0])
+  PKG_CHECK_MODULES(OGON_COMPOSITOR, [ogon-backend1 freerdp2 >= 2.0 freerdp-server2 >= 2.0])
 fi
 
 
