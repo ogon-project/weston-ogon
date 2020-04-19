@@ -159,7 +159,7 @@ rdp_peer_refresh_rfx(pixman_region32_t *damage, pixman_image_t *image, freerdp_p
 	uint32_t *ptr;
 	RFX_RECT *rfxRect;
 	rdpUpdate *update = peer->update;
-	SURFACE_BITS_COMMAND cmd;
+	SURFACE_BITS_COMMAND cmd = { 0 };
 	RdpPeerContext *context = (RdpPeerContext *)peer->context;
 
 	Stream_Clear(context->encode_stream);
@@ -170,8 +170,6 @@ rdp_peer_refresh_rfx(pixman_region32_t *damage, pixman_image_t *image, freerdp_p
 
 #ifdef HAVE_SKIP_COMPRESSION
 	cmd.skipCompression = TRUE;
-#else
-	memset(&cmd, 0, sizeof(cmd));
 #endif
 	cmd.destLeft = damage->extents.x1;
 	cmd.destTop = damage->extents.y1;
@@ -216,7 +214,7 @@ rdp_peer_refresh_nsc(pixman_region32_t *damage, pixman_image_t *image, freerdp_p
 	int width, height;
 	uint32_t *ptr;
 	rdpUpdate *update = peer->update;
-	SURFACE_BITS_COMMAND cmd;
+	SURFACE_BITS_COMMAND cmd = { 0 };
 	RdpPeerContext *context = (RdpPeerContext *)peer->context;
 
 	Stream_Clear(context->encode_stream);
@@ -227,8 +225,6 @@ rdp_peer_refresh_nsc(pixman_region32_t *damage, pixman_image_t *image, freerdp_p
 
 #ifdef HAVE_SKIP_COMPRESSION
 	cmd.skipCompression = TRUE;
-#else
-	memset(&cmd, 0, sizeof(cmd));
 #endif
 	cmd.destLeft = damage->extents.x1;
 	cmd.destTop = damage->extents.y1;
@@ -268,7 +264,7 @@ static void
 rdp_peer_refresh_raw(pixman_region32_t *region, pixman_image_t *image, freerdp_peer *peer)
 {
 	rdpUpdate *update = peer->update;
-	SURFACE_BITS_COMMAND cmd;
+	SURFACE_BITS_COMMAND cmd = { 0 };
 	SURFACE_FRAME_MARKER marker;
 	pixman_box32_t *rect, subrect;
 	int nrects, i;
@@ -282,7 +278,6 @@ rdp_peer_refresh_raw(pixman_region32_t *region, pixman_image_t *image, freerdp_p
 	marker.frameAction = SURFACECMD_FRAMEACTION_BEGIN;
 	update->SurfaceFrameMarker(peer->context, &marker);
 
-	memset(&cmd, 0, sizeof(cmd));
 	SURFACE_BPP(cmd) = 32;
 	SURFACE_CODECID(cmd) = 0;
 
