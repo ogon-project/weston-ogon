@@ -60,6 +60,14 @@
 
 #include "weston-launch.h"
 
+/* major()/minor() */
+#ifdef MAJOR_IN_MKDEV
+#    include <sys/mkdev.h>
+#endif
+#ifdef MAJOR_IN_SYSMACROS
+#    include <sys/sysmacros.h>
+#endif
+
 #define DRM_MAJOR 226
 
 #ifndef KDSKBMUTE
