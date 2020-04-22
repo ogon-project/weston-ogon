@@ -50,6 +50,14 @@
 #define KDSKBMUTE	0x4B51
 #endif
 
+/* major()/minor() */
+#ifdef MAJOR_IN_MKDEV
+#	include <sys/mkdev.h>
+#endif
+#ifdef MAJOR_IN_SYSMACROS
+#	include <sys/sysmacros.h>
+#endif
+
 #ifdef HAVE_LIBDRM
 
 #include <xf86drm.h>

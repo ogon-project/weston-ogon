@@ -43,6 +43,14 @@
 
 #define DRM_MAJOR 226
 
+/* major()/minor() */
+#ifdef MAJOR_IN_MKDEV
+#	include <sys/mkdev.h>
+#endif
+#ifdef MAJOR_IN_SYSMACROS
+#	include <sys/sysmacros.h>
+#endif
+
 struct launcher_logind {
 	struct weston_launcher base;
 	struct weston_compositor *compositor;
