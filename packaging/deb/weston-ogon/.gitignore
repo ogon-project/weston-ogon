@@ -1,0 +1,11 @@
+*.log
+.debhelper/
+debhelper-build-stamp
+files
+*.substvars
+tmp
+weston-ogon-dbg/
+weston-ogon/
+weston-ogon-dev/
+*.before
+*.after
