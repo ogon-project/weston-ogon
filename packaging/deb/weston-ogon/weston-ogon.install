@@ -1,0 +1,4 @@
+usr/bin/w*
+usr/lib/*/weston*
+usr/share/wayland-sessions/*
+usr/share/weston/*
